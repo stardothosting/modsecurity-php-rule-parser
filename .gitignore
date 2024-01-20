@@ -1,0 +1,44 @@
+# Ignore vendor directory
+/vendor/
+
+# Ignore composer.lock
+/composer.lock
+
+# Ignore .env file
+.env
+
+# Ignore logs and cache files
+/log/
+/public/cache/
+
+# Ignore PhpStorm files
+.idea/
+*.iml
+
+# Ignore OS-generated files
+.DS_Store
+Thumbs.db
+
+# Ignore PHPUnit XML configuration
+phpunit.xml
+
+# Ignore user-specific files
+/.php_cs
+/.php_cs.cache
+/.phpunit.result.cache
+
+# Ignore Composer's user-specific files
+/.composer/
+
+# Ignore .DS_Store files on Mac
+.DS_Store
+
+# Ignore Node.js files
+/node_modules/
+
+# Ignore SQLite database files
+/*.sqlite
+
+# Ignore environment configuration file
+/.env
+
