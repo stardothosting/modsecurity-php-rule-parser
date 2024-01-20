@@ -1,11 +1,11 @@
 {
-    "name": "yourvendor/modsecurity-parser",
+    "name": "stardothosting/modsecurity-parser",
     "description": "A ModSecurity rule parser for PHP",
     "type": "library",
     "authors": [
         {
-            "name": "Your Name",
-            "email": "your.email@example.com"
+            "name": "Shift8 Web",
+            "email": "sales@shift8web.com"
         }
     ],
     "require": {
@@ -17,7 +17,7 @@
     },
     "autoload": {
         "psr-4": {
-            "ModSecurityParser\\": "src/"
+            "Stardothosting\\ModSecurityParser\\": "src/"
         }
     },
     "config": {

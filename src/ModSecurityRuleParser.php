@@ -1,6 +1,6 @@
 <?php
 
-namespace ModSecurityParser;
+namespace Stardothosting\ModSecurityParser;
 
 class ModSecurityRuleParser
 {
