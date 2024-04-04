@@ -2,6 +2,7 @@
     "name": "stardothosting/modsecurity-parser",
     "description": "A ModSecurity rule parser for PHP",
     "type": "library",
+    "license": "GPL-3.0-or-later",
     "authors": [
         {
             "name": "Shift8 Web",
