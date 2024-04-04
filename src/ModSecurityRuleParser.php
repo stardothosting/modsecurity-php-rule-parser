@@ -2,6 +2,9 @@
 
 namespace Stardothosting\ModSecurityParser;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+
 class ModSecurityParser
 {
     private $openaiApiKey;
@@ -54,6 +57,7 @@ class ModSecurityParser
 
     private function callOpenAIChatGPT($ruleString)
     {
+        $client = new Client();
         $data = [
             'model' => 'gpt-3.5-turbo-instruct', // Specify the model parameter
             'prompt' => "Interpret the following ModSecurity rule and produce a summary in 50 words or less:\n\n$ruleString\n\nDescription:",
@@ -62,25 +66,25 @@ class ModSecurityParser
             'stop' => '###'
         ];
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->openaiApiUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $this->openaiApiKey,
-        ]);
+        try {
+            $response = $client->post($this->openaiApiUrl, [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Authorization' => 'Bearer ' . $this->openaiApiKey,
+                ],
+                'json' => $data,
+            ]);
 
-        $response = curl_exec($ch);
-        curl_close($ch);
+            $decodedResponse = json_decode($response->getBody(), true);
 
-        $decodedResponse = json_decode($response, true);
-
-        if (isset($decodedResponse['choices']) && !empty($decodedResponse['choices'])) {
-            return trim($decodedResponse['choices'][0]['text']);
-        } else {
-            return 'Description not found.';
+            if (isset($decodedResponse['choices']) && !empty($decodedResponse['choices'])) {
+                return trim($decodedResponse['choices'][0]['text']);
+            } else {
+                return 'Description not found.';
+            }
+        } catch (GuzzleException $e) {
+            // Handle exception
+            return 'Failed to fetch data from OpenAI API.';
         }
     }
 
