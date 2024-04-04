@@ -103,7 +103,7 @@ class ModSecurityParser
             }
         } catch (GuzzleException $e) {
             // Handle exception
-            return 'Failed to fetch data from OpenAI API.';
+            return null;
         }
     }
 
@@ -127,7 +127,7 @@ class ModSecurityParser
                     // Ensure these keys are always present
                     if (!array_key_exists('id', $currentRule)) $currentRule['id'] = null;
                     if (!array_key_exists('msg', $currentRule)) $currentRule['msg'] = null;
-                    $currentRule['Analysis'] = $this->interpretRule($currentRule);
+                    $currentRule['Description'] = $this->interpretRule($currentRule);
                     $rules[] = $currentRule;
                 }
                 $currentRule = ['SecRule' => []];
