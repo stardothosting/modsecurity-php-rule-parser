@@ -11,11 +11,11 @@ class ModSecurityParser
     private $openaiApiUrl;
     private $group;
 
-    public function __construct($apiKey, $group)
+    public function __construct($apiKey, $group = null)
     {
         $this->openaiApiKey = $apiKey;
         $this->openaiApiUrl = 'https://api.openai.com/v1/completions';
-        $this->group = null;
+        $this->group = $group;
     }
 
     public function parseModSecurityFiles($directory)
@@ -162,6 +162,7 @@ class ModSecurityParser
 
             $currentRule['SecRule'][$directive] = $value;
             $currentRule['File'] = $path_parts;
+            $currentRule['Group'] = $this->group;
         }
 
         return $rules;
