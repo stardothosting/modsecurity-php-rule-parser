@@ -9,11 +9,13 @@ class ModSecurityParser
 {
     private $openaiApiKey;
     private $openaiApiUrl;
+    private $group;
 
-    public function __construct($apiKey)
+    public function __construct($apiKey, $group)
     {
         $this->openaiApiKey = $apiKey;
         $this->openaiApiUrl = 'https://api.openai.com/v1/completions';
+        $this->group = null;
     }
 
     public function parseModSecurityFiles($directory)
@@ -113,6 +115,7 @@ class ModSecurityParser
         $lines = explode("\n", $content);
         $rules = [];
         $currentRule = [];
+        $path_parts = pathinfo($filePath);
 
         foreach ($lines as $line) {
 
@@ -158,6 +161,7 @@ class ModSecurityParser
             }
 
             $currentRule['SecRule'][$directive] = $value;
+            $currentRule['File'] = $path_parts;
         }
 
         return $rules;
