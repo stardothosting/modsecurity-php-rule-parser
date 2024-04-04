@@ -29,12 +29,6 @@ class ModSecurityParser
         return json_encode($allRules, JSON_PRETTY_PRINT);
     }
 
-    private function interpretPattern($pattern)
-    {
-        // Placeholder logic for interpreting patterns
-        return "Pattern: $pattern";
-    }
-
     private function interpretRule($rule)
     {
         $description = '';
@@ -53,6 +47,31 @@ class ModSecurityParser
         }
 
         return $description;
+    }
+
+    // Function to extract rule content
+    private function extractRuleId($rule) {
+        $value = null;
+        if (strpos($rule, 'id:') !== false) {
+            // Check for the presence of 'id' in the SecRule field
+            if (preg_match('/id:(\d+)/', $rule, $matches)) {
+                $value = $matches[1];
+            }
+        }
+        return $value;
+    }
+
+    // Function to extract rule content
+    private function extractRuleContent($rule, $tag) {
+        $value = null;
+        $strip_characters = array( '\'', '"', ',' , ';', '<', '>' );
+        if ($tag && strpos($rule, $tag . ':') !== false) {
+            // Check for the presence of 'id' in the SecRule field
+            if (preg_match('/' . $tag . ':(.*)/', $rule, $matches)) {
+                $value = str_replace($strip_characters, '', $matches[1]);
+            }
+        }
+        return $value;
     }
 
     private function callOpenAIChatGPT($ruleString)
@@ -96,6 +115,7 @@ class ModSecurityParser
         $currentRule = [];
 
         foreach ($lines as $line) {
+
             $line = trim($line);
 
             if (empty($line) || strpos($line, '#') === 0) {
@@ -104,10 +124,24 @@ class ModSecurityParser
 
             if (strpos($line, 'SecRule') === 0) {
                 if (!empty($currentRule)) {
+                    // Ensure these keys are always present
+                    if (!array_key_exists('id', $currentRule)) $currentRule['id'] = null;
+                    if (!array_key_exists('msg', $currentRule)) $currentRule['msg'] = null;
                     $currentRule['Analysis'] = $this->interpretRule($currentRule);
                     $rules[] = $currentRule;
                 }
                 $currentRule = ['SecRule' => []];
+            }
+
+
+            // Add a new field "ID"
+            if (strpos($line, 'id:') !== false) {
+                $currentRule['id'] = $this->extractRuleId($line);
+            }
+
+            // Check if 'msg:' is present in the SecRule field
+            if (strpos($line, 'msg:') !== false) {
+                $currentRule['msg'] = $this->extractRuleContent($line, 'msg');
             }
 
             $parts = explode(' ', $line, 2);
@@ -126,20 +160,9 @@ class ModSecurityParser
             $currentRule['SecRule'][$directive] = $value;
         }
 
-        if (!empty($currentRule)) {
-            $currentRule['Analysis'] = $this->interpretRule($currentRule);
-            $rules[] = $currentRule;
-        }
-
         return $rules;
     }
 
 }
-
-// Example usage:
-//$openaiApiKey = '';
-//$parser = new ModSecurityParser($openaiApiKey);
-//$directory = '/etc/caddy/wordpress-modsecurity-ruleset/';
-//echo $parser->parseModSecurityFiles($directory);
 
 ?>
