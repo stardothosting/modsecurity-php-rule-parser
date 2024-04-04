@@ -11,10 +11,10 @@ class ModSecurityParser
     private $openaiApiUrl;
     private $group;
 
-    public function __construct($apiKey, $group = null)
+    public function __construct($apiKey, $apiUrl, $group = null)
     {
         $this->openaiApiKey = $apiKey;
-        $this->openaiApiUrl = 'https://api.openai.com/v1/completions';
+        $this->openaiApiUrl = $apiUrl;
         $this->group = $group;
     }
 

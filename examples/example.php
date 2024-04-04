@@ -10,7 +10,8 @@ use Stardothosting\ModSecurityParser\ModSecurityParser;
 
 // Example usage
 $openaiApiKey = '';
-$parser = new ModSecurityParser($openaiApiKey, 'wordpress');
+$openaiApiUrl = 'https://api.openai.com/v1/completions';
+$parser = new ModSecurityParser($openaiApiKey, $openApiUrl, 'wordpress');
 $directory = '/etc/caddy/wordpress-modsecurity-ruleset/';
 echo $parser->parseModSecurityFiles($directory);
 
