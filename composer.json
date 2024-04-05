@@ -19,7 +19,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Stardothosting\\ModSecurityParser\\": "src/"
+            "Stardothosting\\": "src/"
         }
     },
     "config": {
