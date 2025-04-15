@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * ModSecurity Rule Parser
+ * 
+ * Parses ModSecurity rules and generates JSON output with AI-powered interpretation
+ * 
+ * @package Stardothosting\ModSecurityParser
+ * @author Star Dot Hosting Inc. <info@stardothosting.com>
+ * @license MIT
+ */
+
 namespace Stardothosting\ModSecurityParser;
 
 use GuzzleHttp\Client;
@@ -7,10 +17,22 @@ use GuzzleHttp\Exception\GuzzleException;
 
 class ModSecurityParser
 {
+    /** @var string OpenAI API key */
     private $openaiApiKey;
+
+    /** @var string OpenAI API endpoint URL */
     private $openaiApiUrl;
+
+    /** @var string|null Optional group identifier for rules */
     private $group;
 
+    /**
+     * Constructor
+     *
+     * @param string $apiKey OpenAI API key
+     * @param string $apiUrl OpenAI API endpoint URL
+     * @param string|null $group Optional group identifier
+     */
     public function __construct($apiKey, $apiUrl, $group = null)
     {
         $this->openaiApiKey = $apiKey;

@@ -1,24 +1,24 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use ModSecurityParser\ModSecurityRuleParser;
+use Stardothosting\ModSecurityParser\ModSecurityParser;
 
-class ModSecurityRuleParserTest extends TestCase
+class ModSecurityParserTest extends TestCase
 {
-    public function testConvertModSecurityToJSON()
+    public function testParseModSecurityFiles()
     {
-        $parser = new ModSecurityRuleParser();
+        $parser = new ModSecurityParser('test-key', 'test-url', 'test-group');
 
         // Specify the path to the ModSecurity rule files
         $directory = __DIR__ . '/conf/';
 
         // Call the method to convert ModSecurity rules to JSON
-        $jsonData = $parser->convertModSecurityToJSON($directory);
+        $jsonData = $parser->parseModSecurityFiles($directory);
 
         // Decode the JSON data
         $decodedData = json_decode($jsonData, true);
 
-        // Perform your assertions based on the expected structure or content
+        // Perform assertions
         $this->assertIsArray($decodedData);
         $this->assertNotEmpty($decodedData);
     }
