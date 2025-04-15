@@ -26,7 +26,7 @@ class ModSecurityParser
     /** @var string|null Optional group identifier for rules */
     private $group;
 
-    /** @var string OpenAI model to use */
+    /** @var string OpenAI model type to use */
     private $model;
 
     /**
