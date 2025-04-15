@@ -26,18 +26,23 @@ class ModSecurityParser
     /** @var string|null Optional group identifier for rules */
     private $group;
 
+    /** @var string OpenAI model to use */
+    private $model;
+
     /**
      * Constructor
      *
      * @param string $apiKey OpenAI API key
      * @param string $apiUrl OpenAI API endpoint URL
      * @param string|null $group Optional group identifier
+     * @param string $model OpenAI model to use (defaults to gpt-3.5-turbo-instruct)
      */
-    public function __construct($apiKey, $apiUrl, $group = null)
+    public function __construct($apiKey, $apiUrl, $group = null, $model = 'gpt-3.5-turbo-instruct')
     {
         $this->openaiApiKey = $apiKey;
         $this->openaiApiUrl = $apiUrl;
         $this->group = $group;
+        $this->model = $model;
     }
 
     public function parseModSecurityFiles($directory)
@@ -102,7 +107,7 @@ class ModSecurityParser
     {
         $client = new Client();
         $data = [
-            'model' => 'gpt-3.5-turbo-instruct', // Specify the model parameter
+            'model' => $this->model, // Use the configured model
             'prompt' => "Interpret the following ModSecurity rule and produce a summary in 50 words or less:\n\n$ruleString\n\nDescription:",
             'max_tokens' => 100,
             'temperature' => 0.5,
