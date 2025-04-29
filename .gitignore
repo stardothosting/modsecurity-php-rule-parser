@@ -1,0 +1,17 @@
+/vendor/
+/composer.lock
+
+/.idea/
+/.vscode/
+/phpunit.xml.cache
+
+/tests/coreruleset-rules/
+/examples/*.log
+/examples/*.out
+
+.DS_Store
+Thumbs.db
+
+*.swp
+*.swo
+
