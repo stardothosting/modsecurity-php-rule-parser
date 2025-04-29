@@ -9,10 +9,9 @@ class RuleSetParserTest extends TestCase
 {
     public function testParseMultilineRule()
     {
-        $raw = <<<EOD
-SecRule REQUEST_URI "@rx admin" "id:1001,phase:2,deny,chain" \\
-SecRule ARGS:username "@rx admin"
-EOD;
+        $raw = "SecRule REQUEST_URI \"@rx admin\" \"id:1001,phase:2,deny,chain\" \\\n" .
+               "SecRule ARGS:username \"@rx admin\"";
+
         $parser = new RuleSetParser();
         $rules = $parser->parseRules($raw);
 

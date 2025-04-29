@@ -88,16 +88,24 @@ class Tokenizer
             }
         }
 
-        // Special case: quoted string starting with @operator
-        if (preg_match('/^@(\w+)\s+(.+)$/', $value, $matches)) {
+        // Handle quoted operator-only value (e.g., "@detectXSS")
+        if (preg_match('/^(!?@)(\w+)$/', $value, $matches)) {
+            $operator = ($matches[1] === '!@') ? '!' . $matches[2] : $matches[2];
+            return new Token('OPERATOR', $operator);
+        }
+
+        // Handle @operator + space + value (e.g., '@rx foo')
+        if (preg_match('/^(!?@)(\w+)\s+(.+)$/', $value, $matches)) {
+            $operator = ($matches[1] === '!@') ? '!' . $matches[2] : $matches[2];
             return [
-                new Token('OPERATOR', $matches[1]),
-                new Token('QUOTED_STRING', $matches[2])
+                new Token('OPERATOR', $operator),
+                new Token('QUOTED_STRING', $matches[3])
             ];
         }
 
         return new Token('QUOTED_STRING', $value);
     }
+
 
     private function readOperator(): Token
     {

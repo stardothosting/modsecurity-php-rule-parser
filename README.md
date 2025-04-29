@@ -1,15 +1,28 @@
-# ModSecurity Rule Parser (PHP)
+# ModSecurity PHP Rule Parser
 
-A full parser for ModSecurity rules implemented in PHP, designed to handle OWASP CoreRuleSet (CRS) `.conf` files accurately.
+A fully-featured PHP parser for [ModSecurity](https://modsecurity.org/) rules, including full compatibility with [OWASP CoreRuleSet (CRS)](https://coreruleset.org/).
 
-- Parses single rules, chained rules, multi-line rules.
-- Handles transformations, complex operators, and rule actions.
-- Outputs clean structured JSON.
-- Built using Symfony Console + PSR-4 structure.
+This project provides a clean way to tokenize, parse, inspect, and manipulate ModSecurity rule files (`.conf`) in structured PHP objects or JSON — usable from PHP code or a CLI.
 
 ---
 
-## 🚀 Installation
+## ✨ Features
+
+- ✅ Fully parses `SecRule` directives from `.conf` files
+- ✅ Handles:
+  - Chained rules (`chain`)
+  - Multiline rules (`\` continuation)
+  - Quoted actions and operators
+  - Escaped quotes inside rules
+  - Negated operators (e.g. `!@rx`)
+- ✅ Converts rules to structured PHP objects or JSON
+- ✅ CLI to parse files or folders
+- ✅ Includes PHPUnit tests against full OWASP CRS rule set
+- ✅ 100% Composer + PSR-4 compatible
+
+---
+
+## 📦 Installation
 
 ```bash
-composer install
+composer require stardothosting/modsecurity-php-rule-parser
