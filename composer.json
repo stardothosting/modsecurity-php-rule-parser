@@ -1,5 +1,5 @@
 {
-    "name": "yourvendor/modsecurity-parser",
+    "name": "stardothosting/modsecurity-php-rule-parser",
     "description": "A full ModSecurity rule parser implemented in PHP, supporting CoreRuleSet compatibility.",
     "type": "library",
     "require": {

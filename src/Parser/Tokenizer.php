@@ -6,7 +6,7 @@ class Tokenizer
 {
     private string $input;
     private int $position = 0;
-    private int $length = 0;
+    private int $length;
 
     public function __construct(string $input)
     {
@@ -63,7 +63,7 @@ class Tokenizer
 
     private function readQuotedString(): Token
     {
-        $this->advance(); // Skip opening quote
+        $this->advance();
         $value = '';
         $escaped = false;
 
@@ -88,7 +88,7 @@ class Tokenizer
 
     private function readOperator(): Token
     {
-        $this->advance(); // skip '@'
+        $this->advance();
         $value = '';
 
         while (!$this->isEOF() && !ctype_space($this->peek())) {
