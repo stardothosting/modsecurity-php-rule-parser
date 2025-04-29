@@ -20,12 +20,13 @@ class RuleSetParser
 
         $buffer = '';
         $parentRule = null;
+        $expectingChain = false;
 
         foreach ($lines as $line) {
             $line = trim($line);
 
             if ($line === '' || str_starts_with($line, '#')) {
-                continue; // Skip comments and empty lines
+                continue; // skip comments
             }
 
             if (substr($line, -1) === '\\') {
@@ -33,33 +34,45 @@ class RuleSetParser
                 continue;
             } else {
                 $buffer .= $line;
-                // Full logical rule assembled
             }
 
-            if (stripos($buffer, 'SecRule') === 0) {
-                $rule = $this->ruleParser->parse($buffer);
+            // Now, split buffered block into multiple SecRules if necessary
+            $splitRules = $this->splitSecRules($buffer);
 
-                if ($this->isChainRule($rule)) {
-                    if ($parentRule === null) {
-                        $parentRule = $rule;
-                    } else {
+            foreach ($splitRules as $ruleString) {
+                if (empty(trim($ruleString))) {
+                    continue;
+                }
+
+                try {
+                    $rule = $this->ruleParser->parse('SecRule ' . trim($ruleString));
+                } catch (\Exception $e) {
+                    $buffer = '';
+                    continue;
+                }
+
+                if ($expectingChain) {
+                    if ($parentRule) {
                         $parentRule->addChainedRule($rule);
                     }
+                    $expectingChain = $this->isChainRule($rule);
+                } elseif ($this->isChainRule($rule)) {
+                    $parentRule = $rule;
+                    $expectingChain = true;
                 } else {
-                    if ($parentRule !== null) {
-                        $parentRule->addChainedRule($rule);
+                    if ($parentRule) {
                         $rules[] = $parentRule;
                         $parentRule = null;
-                    } else {
-                        $rules[] = $rule;
                     }
+                    $rules[] = $rule;
+                    $expectingChain = false;
                 }
             }
 
-            $buffer = ''; // reset buffer after processing
+            $buffer = '';
         }
 
-        if ($parentRule !== null) {
+        if ($parentRule) {
             $rules[] = $parentRule;
         }
 
@@ -74,5 +87,11 @@ class RuleSetParser
             }
         }
         return false;
+    }
+
+    private function splitSecRules(string $input): array
+    {
+        $parts = preg_split('/SecRule\s+/i', $input, -1, PREG_SPLIT_NO_EMPTY);
+        return $parts;
     }
 }
