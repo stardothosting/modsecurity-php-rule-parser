@@ -26,6 +26,7 @@ This project provides a clean way to tokenize, parse, inspect, and manipulate Mo
 
 ```bash
 composer require stardothosting/modsecurity-php-rule-parser
+```
 
 If working from source:
 
