@@ -28,7 +28,12 @@ class Tokenizer
             $char = $this->peek();
 
             if ($char === '"') {
-                $tokens[] = $this->readQuotedString();
+                $token = $this->readQuotedString();
+                if (is_array($token)) {
+                    $tokens = array_merge($tokens, $token);
+                } else {
+                    $tokens[] = $token;
+                }
             } elseif ($char === '@') {
                 $tokens[] = $this->readOperator();
             } else {
@@ -61,9 +66,9 @@ class Tokenizer
         }
     }
 
-    private function readQuotedString(): Token
+    private function readQuotedString()
     {
-        $this->advance();
+        $this->advance(); // Skip opening quote
         $value = '';
         $escaped = false;
 
@@ -83,12 +88,20 @@ class Tokenizer
             }
         }
 
+        // Special case: quoted string starting with @operator
+        if (preg_match('/^@(\w+)\s+(.+)$/', $value, $matches)) {
+            return [
+                new Token('OPERATOR', $matches[1]),
+                new Token('QUOTED_STRING', $matches[2])
+            ];
+        }
+
         return new Token('QUOTED_STRING', $value);
     }
 
     private function readOperator(): Token
     {
-        $this->advance();
+        $this->advance(); // Skip @
         $value = '';
 
         while (!$this->isEOF() && !ctype_space($this->peek())) {
