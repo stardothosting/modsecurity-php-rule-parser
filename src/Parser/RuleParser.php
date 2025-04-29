@@ -6,92 +6,75 @@ use ModSecurity\Model\Rule;
 use ModSecurity\Model\Variable;
 use ModSecurity\Model\Operator;
 use ModSecurity\Model\Action;
+use ModSecurity\Model\Chain;
 
 class RuleParser
 {
-    public function parse(string $ruleString): Rule
-    {
-        $tokenizer = new Tokenizer($ruleString);
-        $tokens = $tokenizer->tokenize();
+    private Tokenizer $tokenizer;
 
-        if (empty($tokens)) {
-            throw new \Exception("No tokens found in rule: $ruleString");
+    public function parse(string $rawRule): Rule
+    {
+        $this->tokenizer = new Tokenizer($rawRule);
+        $tokens = $this->tokenizer->tokenize();
+
+        if (count($tokens) < 4) {
+            throw new \Exception("Failed to parse rule: $rawRule");
         }
 
-        // Parse basic rule components
         $tokenIndex = 0;
 
-        // 1. Expect 'SecRule'
-        $this->expectWord($tokens[$tokenIndex++], 'SecRule');
-
-        // 2. Variables
-        $variableToken = $this->expectType($tokens[$tokenIndex++], 'WORD');
-        $variables = $this->parseVariables($variableToken->value);
-
-        // 3. Operator
-        $operatorToken = $this->expectType($tokens[$tokenIndex++], 'OPERATOR');
-        $operatorValueToken = $this->expectType($tokens[$tokenIndex++], 'QUOTED_STRING');
-        $operator = new Operator($operatorToken->value, $operatorValueToken->value);
-
-        // 4. Actions
-        $actions = [];
-        if (isset($tokens[$tokenIndex])) {
-            $actionToken = $this->expectType($tokens[$tokenIndex], 'QUOTED_STRING');
-            $actions = $this->parseActions($actionToken->value);
+        // Expect: SecRule
+        $secRule = $tokens[$tokenIndex++];
+        if ($secRule->value !== 'SecRule') {
+            throw new \Exception("Expected SecRule, got {$secRule->value}");
         }
 
-        return new Rule($variables, $operator, $actions);
-    }
+        // Variables
+        $variablesToken = $tokens[$tokenIndex++];
+        $variables = explode('|', $variablesToken->value);
+        $variablesList = [];
 
-    private function parseVariables(string $value): array
-    {
-        $parts = explode('|', $value);
-        $variables = [];
+        foreach ($variables as $variable) {
+            $variablesList[] = new Variable($variable);
+        }
 
-        foreach ($parts as $part) {
-            $part = trim($part);
+        // Operator
+        $operatorTypeToken = $tokens[$tokenIndex++];
+        $operatorValueToken = $tokens[$tokenIndex++];
 
-            if (strpos($part, ':') !== false) {
-                [$name, $key] = explode(':', $part, 2);
-                $variables[] = new Variable($name, $key);
-            } else {
-                $variables[] = new Variable($part, null);
+        $operatorType = $operatorTypeToken->value;
+        if (!str_starts_with($operatorType, '@')) {
+            $operatorType = '@' . $operatorType;
+        }
+
+        $operator = new Operator($operatorType, $operatorValueToken->value);
+
+        // Actions
+        $actions = [];
+        while ($tokenIndex < count($tokens)) {
+            $token = $tokens[$tokenIndex++];
+            if ($token->type !== 'QUOTED_STRING') {
+                continue;
+            }
+
+            $actionList = explode(',', $token->value);
+            foreach ($actionList as $actionEntry) {
+                $actionEntry = trim($actionEntry);
+                if ($actionEntry === '') {
+                    continue;
+                }
+
+                if (strpos($actionEntry, ':') !== false) {
+                    [$actionName, $actionParam] = explode(':', $actionEntry, 2);
+                    $actions[] = new Action(trim($actionName), trim($actionParam));
+                } else {
+                    $actions[] = new Action(trim($actionEntry), null);
+                }
             }
         }
 
-        return $variables;
-    }
+        $rule = new Rule($variablesList, $operator, $actions);
 
-    private function parseActions(string $actionsString): array
-    {
-        $parts = explode(',', $actionsString);
-        $actions = [];
-
-        foreach ($parts as $actionPart) {
-            $actionPart = trim($actionPart);
-            if (strpos($actionPart, ':') !== false) {
-                [$name, $param] = explode(':', $actionPart, 2);
-                $actions[] = new Action($name, $param);
-            } else {
-                $actions[] = new Action($actionPart, null);
-            }
-        }
-
-        return $actions;
-    }
-
-    private function expectWord(Token $token, string $expected): void
-    {
-        if ($token->type !== 'WORD' || strtolower($token->value) !== strtolower($expected)) {
-            throw new \Exception("Expected WORD '$expected', got {$token->type} '{$token->value}'");
-        }
-    }
-
-    private function expectType(Token $token, string $expectedType): Token
-    {
-        if ($token->type !== $expectedType) {
-            throw new \Exception("Expected $expectedType, got {$token->type} '{$token->value}'");
-        }
-        return $token;
+        return $rule;
     }
 }
