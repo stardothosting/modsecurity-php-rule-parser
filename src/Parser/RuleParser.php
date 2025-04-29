@@ -8,10 +8,23 @@ use ModSecurity\Model\Operator;
 use ModSecurity\Model\Action;
 use ModSecurity\Model\Chain;
 
+/**
+ * Parses a single ModSecurity SecRule string into a Rule object.
+ */
 class RuleParser
 {
+    /**
+     * @var Tokenizer Tokenizer instance for the current rule
+     */
     private Tokenizer $tokenizer;
 
+    /**
+     * Parse a raw SecRule string into a Rule object.
+     *
+     * @param string $rawRule The raw SecRule string (without leading/trailing whitespace)
+     * @return Rule
+     * @throws \Exception If the rule cannot be parsed
+     */
     public function parse(string $rawRule): Rule
     {
         $this->tokenizer = new Tokenizer($rawRule);
@@ -29,7 +42,7 @@ class RuleParser
             throw new \Exception("Expected SecRule, got {$secRule->value}");
         }
 
-        // Variables
+        // Parse variables (can be pipe-separated)
         $variablesToken = $tokens[$tokenIndex++];
         $variables = explode('|', $variablesToken->value);
         $variablesList = [];
@@ -38,7 +51,7 @@ class RuleParser
             $variablesList[] = new Variable($variable);
         }
 
-        // Operator
+        // Parse operator type and value
         $operatorTypeToken = $tokens[$tokenIndex++];
         $operatorValueToken = $tokens[$tokenIndex++];
 
@@ -49,7 +62,7 @@ class RuleParser
 
         $operator = new Operator($operatorType, $operatorValueToken->value);
 
-        // Actions
+        // Parse actions (comma-separated, possibly with parameters)
         $actions = [];
         while ($tokenIndex < count($tokens)) {
             $token = $tokens[$tokenIndex++];

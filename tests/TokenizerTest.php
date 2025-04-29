@@ -5,8 +5,14 @@ namespace ModSecurity\Tests;
 use PHPUnit\Framework\TestCase;
 use ModSecurity\Parser\Tokenizer;
 
+/**
+ * Unit test for the Tokenizer class.
+ */
 class TokenizerTest extends TestCase
 {
+    /**
+     * Test tokenization of a simple rule.
+     */
     public function testSimpleRuleTokenization()
     {
         $tokenizer = new Tokenizer('SecRule ARGS "@rx test" "id:1,phase:2,deny"');

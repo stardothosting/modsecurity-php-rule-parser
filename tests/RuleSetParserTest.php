@@ -5,8 +5,14 @@ namespace ModSecurity\Tests;
 use PHPUnit\Framework\TestCase;
 use ModSecurity\Parser\RuleSetParser;
 
+/**
+ * Unit tests for RuleSetParser.
+ */
 class RuleSetParserTest extends TestCase
 {
+    /**
+     * Test parsing a simple multiline chained rule.
+     */
     public function testParseMultilineRule()
     {
         $raw = <<<CONF
@@ -22,6 +28,9 @@ CONF;
         $this->assertCount(1, $rules[0]->chainedRules);
     }
 
+    /**
+     * Test parsing a rule with multiple chained rules.
+     */
     public function testMultiLineMultiChainRule()
     {
         $raw = <<<CONF
@@ -39,6 +48,9 @@ CONF;
         $this->assertEquals('ARGS:password', $rules[0]->chainedRules[1]->variables[0]->name);
     }
 
+    /**
+     * Test parsing rules with tabs and extra spaces.
+     */
     public function testTabsAndSpacesHandling()
     {
         $raw = <<<CONF
@@ -53,6 +65,9 @@ CONF;
         $this->assertCount(1, $rules[0]->chainedRules);
     }
 
+    /**
+     * Test parsing a rule with escaped quotes in the operator value.
+     */
     public function testEscapedQuotesInOperator()
     {
         $raw = <<<CONF
@@ -68,6 +83,9 @@ CONF;
         $this->assertEquals('"Mozilla"', $rules[0]->operator->value);
     }
 
+    /**
+     * Test parsing a rule with a negated operator.
+     */
     public function testNegatedOperator()
     {
         $raw = <<<CONF
@@ -82,6 +100,9 @@ CONF;
         $this->assertEquals('GET', $rules[0]->operator->value);
     }
 
+    /**
+     * Test parsing a rule with a missing chain (should not error).
+     */
     public function testRuleWithMissingChain()
     {
         $raw = <<<CONF

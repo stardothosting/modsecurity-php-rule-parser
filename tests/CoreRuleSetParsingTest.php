@@ -5,15 +5,28 @@ namespace ModSecurity\Tests;
 use PHPUnit\Framework\TestCase;
 use ModSecurity\Parser\RuleSetParser;
 
+/**
+ * Integration test for parsing all files in the CoreRuleSet.
+ */
 class CoreRuleSetParsingTest extends TestCase
 {
+    /**
+     * @var RuleSetParser
+     */
     private RuleSetParser $parser;
 
+    /**
+     * Set up the parser before each test.
+     */
     protected function setUp(): void
     {
         $this->parser = new RuleSetParser();
     }
 
+    /**
+     * Test parsing all .conf files in the CoreRuleSet rules folder.
+     * (Requires manual copy of rules to coreruleset-rules/)
+     */
     public function testParseAllCoreRuleSetFiles()
     {
         $rulesFolder = __DIR__ . '/../coreruleset-rules/'; // Copy CoreRuleSet rules folder here manually
@@ -31,6 +44,11 @@ class CoreRuleSetParsingTest extends TestCase
         }
     }
 
+    /**
+     * Parse a single file and assert the rules are valid.
+     *
+     * @param string $filePath
+     */
     private function parseFile(string $filePath): void
     {
         $content = file_get_contents($filePath);

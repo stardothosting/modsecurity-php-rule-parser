@@ -2,18 +2,42 @@
 
 namespace ModSecurity\Parser;
 
+/**
+ * Tokenizes a ModSecurity rule string into tokens for parsing.
+ */
 class Tokenizer
 {
+    /**
+     * @var string The input string to tokenize
+     */
     private string $input;
+
+    /**
+     * @var int Current position in the input string
+     */
     private int $position = 0;
+
+    /**
+     * @var int Length of the input string
+     */
     private int $length;
 
+    /**
+     * Tokenizer constructor.
+     *
+     * @param string $input The rule string to tokenize
+     */
     public function __construct(string $input)
     {
         $this->input = $input;
         $this->length = strlen($input);
     }
 
+    /**
+     * Tokenize the input string into an array of Token objects.
+     *
+     * @return Token[]
+     */
     public function tokenize(): array
     {
         $tokens = [];
@@ -28,6 +52,7 @@ class Tokenizer
             $char = $this->peek();
 
             if ($char === '"') {
+                // Handle quoted strings (actions, operator values, etc.)
                 $token = $this->readQuotedString();
                 if (is_array($token)) {
                     $tokens = array_merge($tokens, $token);
@@ -35,8 +60,10 @@ class Tokenizer
                     $tokens[] = $token;
                 }
             } elseif ($char === '@') {
+                // Handle operator tokens
                 $tokens[] = $this->readOperator();
             } else {
+                // Handle words (SecRule, variable names, etc.)
                 $tokens[] = $this->readWord();
             }
         }
@@ -44,21 +71,39 @@ class Tokenizer
         return $tokens;
     }
 
+    /**
+     * Check if end of input is reached.
+     *
+     * @return bool
+     */
     private function isEOF(): bool
     {
         return $this->position >= $this->length;
     }
 
+    /**
+     * Peek at the current character.
+     *
+     * @return string
+     */
     private function peek(): string
     {
         return $this->input[$this->position];
     }
 
+    /**
+     * Advance the current position.
+     *
+     * @param int $steps
+     */
     private function advance(int $steps = 1): void
     {
         $this->position += $steps;
     }
 
+    /**
+     * Skip whitespace characters.
+     */
     private function skipWhitespace(): void
     {
         while (!$this->isEOF() && ctype_space($this->peek())) {
@@ -66,6 +111,11 @@ class Tokenizer
         }
     }
 
+    /**
+     * Read a quoted string token (handles escaped quotes and special operator cases).
+     *
+     * @return Token|Token[]
+     */
     private function readQuotedString()
     {
         $this->advance(); // Skip opening quote
@@ -106,7 +156,11 @@ class Tokenizer
         return new Token('QUOTED_STRING', $value);
     }
 
-
+    /**
+     * Read an operator token (starts with @).
+     *
+     * @return Token
+     */
     private function readOperator(): Token
     {
         $this->advance(); // Skip @
@@ -120,6 +174,11 @@ class Tokenizer
         return new Token('OPERATOR', $value);
     }
 
+    /**
+     * Read a word token (until whitespace).
+     *
+     * @return Token
+     */
     private function readWord(): Token
     {
         $value = '';
