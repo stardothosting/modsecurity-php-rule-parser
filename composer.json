@@ -8,7 +8,7 @@
     },
     "autoload": {
         "psr-4": {
-            "ModSecurity\\": "src/"
+            "Stardothosting\\ModSecurity\\": "src/"
         }
     },
     "autoload-dev": {
