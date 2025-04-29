@@ -1,8 +1,8 @@
 <?php
 
-namespace ModSecurity\Parser;
+namespace Stardothosting\ModSecurity\Parser;
 
-use ModSecurity\Model\Rule;
+use Stardothosting\ModSecurity\Model\Rule;
 
 /**
  * Parses a set of ModSecurity rules (possibly multiline, chained, or with comments).

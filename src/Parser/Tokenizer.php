@@ -1,6 +1,6 @@
 <?php
 
-namespace ModSecurity\Parser;
+namespace Stardothosting\ModSecurity\Parser;
 
 /**
  * Tokenizes a ModSecurity rule string into tokens for parsing.

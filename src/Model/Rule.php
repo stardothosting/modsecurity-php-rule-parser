@@ -1,6 +1,6 @@
 <?php
 
-namespace ModSecurity\Model;
+namespace Stardothosting\ModSecurity\Model;
 
 /**
  * Represents a parsed ModSecurity rule, including variables, operator, actions, and chained rules.

@@ -4,7 +4,7 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 use Symfony\Component\Console\Application;
-use ModSecurity\CLI\ParseRulesCommand;
+use Stardothosting\ModSecurity\CLI\ParseRulesCommand;
 
 $app = new Application('ModSecurity Parser CLI', '2.0.3');
 $app->add(new ParseRulesCommand());

@@ -1,12 +1,12 @@
 <?php
 
-namespace ModSecurity\Parser;
+namespace Stardothosting\ModSecurity\Parser;
 
-use ModSecurity\Model\Rule;
-use ModSecurity\Model\Variable;
-use ModSecurity\Model\Operator;
-use ModSecurity\Model\Action;
-use ModSecurity\Model\Chain;
+use Stardothosting\ModSecurity\Model\Rule;
+use Stardothosting\ModSecurity\Model\Variable;
+use Stardothosting\ModSecurity\Model\Operator;
+use Stardothosting\ModSecurity\Model\Action;
+use Stardothosting\ModSecurity\Model\Chain;
 
 /**
  * Parses a single ModSecurity SecRule string into a Rule object.

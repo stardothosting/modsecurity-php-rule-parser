@@ -1,6 +1,6 @@
 <?php
 
-namespace ModSecurity\Parser;
+namespace Stardothosting\ModSecurity\Parser;
 
 /**
  * Represents a single token in the parsing process.

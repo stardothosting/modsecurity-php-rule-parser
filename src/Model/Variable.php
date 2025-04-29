@@ -1,6 +1,6 @@
 <?php
 
-namespace ModSecurity\Model;
+namespace Stardothosting\ModSecurity\Model;
 
 /**
  * Represents a ModSecurity rule variable (e.g., ARGS, REQUEST_URI).

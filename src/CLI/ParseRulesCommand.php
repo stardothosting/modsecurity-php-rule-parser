@@ -1,8 +1,8 @@
 <?php
 
-namespace ModSecurity\CLI;
+namespace Stardothosting\ModSecurity\CLI;
 
-use ModSecurity\Parser\RuleSetParser;
+use Stardothosting\ModSecurity\Parser\RuleSetParser;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;

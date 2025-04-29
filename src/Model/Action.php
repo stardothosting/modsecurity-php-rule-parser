@@ -1,6 +1,6 @@
 <?php
 
-namespace ModSecurity\Model;
+namespace Stardothosting\ModSecurity\Model;
 
 /**
  * Represents a ModSecurity rule action (e.g., id, phase, deny).

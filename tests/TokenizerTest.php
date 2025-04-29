@@ -1,9 +1,9 @@
 <?php
 
-namespace ModSecurity\Tests;
+namespace Stardothosting\ModSecurity\Tests;
 
 use PHPUnit\Framework\TestCase;
-use ModSecurity\Parser\Tokenizer;
+use Stardothosting\ModSecurity\Parser\Tokenizer;
 
 /**
  * Unit test for the Tokenizer class.

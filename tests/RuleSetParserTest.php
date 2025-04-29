@@ -1,9 +1,9 @@
 <?php
 
-namespace ModSecurity\Tests;
+namespace Stardothosting\ModSecurity\Tests;
 
 use PHPUnit\Framework\TestCase;
-use ModSecurity\Parser\RuleSetParser;
+use Stardothosting\ModSecurity\Parser\RuleSetParser;
 
 /**
  * Unit tests for RuleSetParser.

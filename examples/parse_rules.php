@@ -2,7 +2,7 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use ModSecurity\Parser\RuleSetParser;
+use Stardothosting\ModSecurity\Parser\RuleSetParser;
 
 // Instantiate the parser
 $parser = new RuleSetParser();

@@ -2,7 +2,7 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use ModSecurity\Parser\RuleSetParser;
+use Stardothosting\ModSecurity\Parser\RuleSetParser;
 
 // Path to the example ModSecurity rules file
 $file = __DIR__ . '/example_rules.conf'; // Point to a real .conf file
