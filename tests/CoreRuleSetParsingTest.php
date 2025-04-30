@@ -62,4 +62,50 @@ class CoreRuleSetParsingTest extends TestCase
             $this->assertIsArray($rule->actions, "Parsed rule missing actions in file: $filePath");
         }
     }
+
+    /**
+     * Recursively count rules, including chained rules.
+     *
+     * @param array $rules
+     * @return int
+     */
+    private function countParsedRules(array $rules): int
+    {
+        $count = 0;
+        foreach ($rules as $rule) {
+            $count++;
+            if (isset($rule->chained_rules) && is_array($rule->chained_rules)) {
+                $count += $this->countParsedRules($rule->chained_rules);
+            }
+        }
+        return $count;
+    }
+
+    /**
+     * Test that the total number of parsed rules matches the expected count (564).
+     */
+    public function testParsedRuleCountMatchesExpected()
+    {
+        $rulesFolder = __DIR__ . '/../coreruleset-rules/';
+        $this->assertDirectoryExists($rulesFolder, 'CoreRuleSet rules folder missing.');
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($rulesFolder)
+        );
+
+        $total = 0;
+        foreach ($iterator as $file) {
+            if ($file->isFile() && strtolower($file->getExtension()) === 'conf') {
+                $content = file_get_contents($file->getPathname());
+                $rules = $this->parser->parseRules($content);
+                $total += $this->countParsedRules($rules);
+            }
+        }
+
+        $this->assertSame(
+            564,
+            $total,
+            "Expected 564 rules, got $total"
+        );
+    }
 }

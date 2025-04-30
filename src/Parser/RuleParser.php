@@ -6,88 +6,50 @@ use Stardothosting\ModSecurity\Model\Rule;
 use Stardothosting\ModSecurity\Model\Variable;
 use Stardothosting\ModSecurity\Model\Operator;
 use Stardothosting\ModSecurity\Model\Action;
-use Stardothosting\ModSecurity\Model\Chain;
 
-/**
- * Parses a single ModSecurity SecRule string into a Rule object.
- */
 class RuleParser
 {
-    /**
-     * @var Tokenizer Tokenizer instance for the current rule
-     */
     private Tokenizer $tokenizer;
 
-    /**
-     * Parse a raw SecRule string into a Rule object.
-     *
-     * @param string $rawRule The raw SecRule string (without leading/trailing whitespace)
-     * @return Rule
-     * @throws \Exception If the rule cannot be parsed
-     */
     public function parse(string $rawRule): Rule
     {
         $this->tokenizer = new Tokenizer($rawRule);
         $tokens = $this->tokenizer->tokenize();
 
-        if (count($tokens) < 4) {
-            throw new \Exception("Failed to parse rule: $rawRule");
-        }
-
         $tokenIndex = 0;
 
-        // Expect: SecRule
-        $secRule = $tokens[$tokenIndex++];
-        if ($secRule->value !== 'SecRule') {
-            throw new \Exception("Expected SecRule, got {$secRule->value}");
+        if (!isset($tokens[$tokenIndex]) || $tokens[$tokenIndex++]->value !== 'SecRule') {
+            throw new \Exception("Expected SecRule");
         }
 
-        // Parse variables (can be pipe-separated)
-        $variablesToken = $tokens[$tokenIndex++];
-        $variables = explode('|', $variablesToken->value);
-        $variablesList = [];
+        $varToken = $tokens[$tokenIndex++];
+        $operatorToken = $tokens[$tokenIndex++] ?? null;
+        $operatorValToken = $tokens[$tokenIndex++] ?? null;
 
-        foreach ($variables as $variable) {
-            $variablesList[] = new Variable($variable);
+        $variables = [];
+        foreach (explode('|', $varToken->value) as $v) {
+            [$name, $key] = array_pad(explode(':', $v, 2), 2, null);
+            $variables[] = new Variable(trim($name), $key ? trim($key) : null);
         }
 
-        // Parse operator type and value
-        $operatorTypeToken = $tokens[$tokenIndex++];
-        $operatorValueToken = $tokens[$tokenIndex++];
+        $opType = $operatorToken ? $operatorToken->value : '@rx';
+        if (!str_starts_with($opType, '@')) $opType = '@' . $opType;
 
-        $operatorType = $operatorTypeToken->value;
-        if (!str_starts_with($operatorType, '@')) {
-            $operatorType = '@' . $operatorType;
-        }
+        $operator = new Operator($opType, $operatorValToken ? $operatorValToken->value : '');
 
-        $operator = new Operator($operatorType, $operatorValueToken->value);
-
-        // Parse actions (comma-separated, possibly with parameters)
         $actions = [];
         while ($tokenIndex < count($tokens)) {
             $token = $tokens[$tokenIndex++];
-            if ($token->type !== 'QUOTED_STRING') {
-                continue;
-            }
+            if ($token->type !== 'QUOTED_STRING') continue;
 
-            $actionList = explode(',', $token->value);
-            foreach ($actionList as $actionEntry) {
-                $actionEntry = trim($actionEntry);
-                if ($actionEntry === '') {
-                    continue;
-                }
-
-                if (strpos($actionEntry, ':') !== false) {
-                    [$actionName, $actionParam] = explode(':', $actionEntry, 2);
-                    $actions[] = new Action(trim($actionName), trim($actionParam));
-                } else {
-                    $actions[] = new Action(trim($actionEntry), null);
-                }
+            foreach (explode(',', $token->value) as $a) {
+                $a = trim($a);
+                if (!$a) continue;
+                [$name, $param] = array_pad(explode(':', $a, 2), 2, null);
+                $actions[] = new Action(trim($name), $param ? trim($param) : null);
             }
         }
 
-        $rule = new Rule($variablesList, $operator, $actions);
-
-        return $rule;
+        return new Rule($variables, $operator, $actions);
     }
 }

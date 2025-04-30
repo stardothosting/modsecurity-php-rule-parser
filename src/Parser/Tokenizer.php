@@ -2,192 +2,81 @@
 
 namespace Stardothosting\ModSecurity\Parser;
 
-/**
- * Tokenizes a ModSecurity rule string into tokens for parsing.
- */
+use Stardothosting\ModSecurity\Parser\Token;
+
 class Tokenizer
 {
-    /**
-     * @var string The input string to tokenize
-     */
     private string $input;
-
-    /**
-     * @var int Current position in the input string
-     */
-    private int $position = 0;
-
-    /**
-     * @var int Length of the input string
-     */
     private int $length;
+    private int $position;
 
-    /**
-     * Tokenizer constructor.
-     *
-     * @param string $input The rule string to tokenize
-     */
     public function __construct(string $input)
     {
         $this->input = $input;
         $this->length = strlen($input);
+        $this->position = 0;
     }
 
-    /**
-     * Tokenize the input string into an array of Token objects.
-     *
-     * @return Token[]
-     */
     public function tokenize(): array
     {
         $tokens = [];
 
-        while (!$this->isEOF()) {
+        while ($this->position < $this->length) {
             $this->skipWhitespace();
+            if ($this->position >= $this->length) break;
 
-            if ($this->isEOF()) {
-                break;
-            }
+            $char = $this->input[$this->position];
 
-            $char = $this->peek();
-
-            if ($char === '"') {
-                // Handle quoted strings (actions, operator values, etc.)
-                $token = $this->readQuotedString();
-                if (is_array($token)) {
-                    $tokens = array_merge($tokens, $token);
-                } else {
-                    $tokens[] = $token;
-                }
-            } elseif ($char === '@') {
-                // Handle operator tokens
-                $tokens[] = $this->readOperator();
+            if ($char === '"' || $char === "'") {
+                $tokens[] = new Token('QUOTED_STRING', $this->readQuotedString($char));
+            } elseif (ctype_alpha($char) || $char === '@') {
+                $tokens[] = new Token('WORD', $this->readWord());
             } else {
-                // Handle words (SecRule, variable names, etc.)
-                $tokens[] = $this->readWord();
+                $this->position++;
             }
         }
 
         return $tokens;
     }
 
-    /**
-     * Check if end of input is reached.
-     *
-     * @return bool
-     */
-    private function isEOF(): bool
-    {
-        return $this->position >= $this->length;
-    }
-
-    /**
-     * Peek at the current character.
-     *
-     * @return string
-     */
-    private function peek(): string
-    {
-        return $this->input[$this->position];
-    }
-
-    /**
-     * Advance the current position.
-     *
-     * @param int $steps
-     */
-    private function advance(int $steps = 1): void
-    {
-        $this->position += $steps;
-    }
-
-    /**
-     * Skip whitespace characters.
-     */
     private function skipWhitespace(): void
     {
-        while (!$this->isEOF() && ctype_space($this->peek())) {
-            $this->advance();
+        while ($this->position < $this->length && ctype_space($this->input[$this->position])) {
+            $this->position++;
         }
     }
 
-    /**
-     * Read a quoted string token (handles escaped quotes and special operator cases).
-     *
-     * @return Token|Token[]
-     */
-    private function readQuotedString()
+    private function readQuotedString(string $quote): string
     {
-        $this->advance(); // Skip opening quote
+        $this->position++;  // Skip opening quote
         $value = '';
-        $escaped = false;
 
-        while (!$this->isEOF()) {
-            $char = $this->peek();
-            $this->advance();
+        while ($this->position < $this->length) {
+            $char = $this->input[$this->position];
 
-            if ($escaped) {
-                $value .= $char;
-                $escaped = false;
-            } elseif ($char === '\\') {
-                $escaped = true;
-            } elseif ($char === '"') {
+            if ($char === '\\' && $this->position + 1 < $this->length) {
+                $value .= $this->input[$this->position + 1];
+                $this->position += 2;
+            } elseif ($char === $quote) {
+                $this->position++;
                 break;
             } else {
                 $value .= $char;
+                $this->position++;
             }
         }
 
-        // Handle quoted operator-only value (e.g., "@detectXSS")
-        if (preg_match('/^(!?@)(\w+)$/', $value, $matches)) {
-            $operator = ($matches[1] === '!@') ? '!' . $matches[2] : $matches[2];
-            return new Token('OPERATOR', $operator);
-        }
-
-        // Handle @operator + space + value (e.g., '@rx foo')
-        if (preg_match('/^(!?@)(\w+)\s+(.+)$/', $value, $matches)) {
-            $operator = ($matches[1] === '!@') ? '!' . $matches[2] : $matches[2];
-            return [
-                new Token('OPERATOR', $operator),
-                new Token('QUOTED_STRING', $matches[3])
-            ];
-        }
-
-        return new Token('QUOTED_STRING', $value);
+        return $value;
     }
 
-    /**
-     * Read an operator token (starts with @).
-     *
-     * @return Token
-     */
-    private function readOperator(): Token
+    private function readWord(): string
     {
-        $this->advance(); // Skip @
-        $value = '';
-
-        while (!$this->isEOF() && !ctype_space($this->peek())) {
-            $value .= $this->peek();
-            $this->advance();
+        $start = $this->position;
+        while ($this->position < $this->length &&
+               (ctype_alnum($this->input[$this->position]) || $this->input[$this->position] === ':' || $this->input[$this->position] === '@' || $this->input[$this->position] === '_' || $this->input[$this->position] === '-' || $this->input[$this->position] === '|')) {
+            $this->position++;
         }
 
-        return new Token('OPERATOR', $value);
-    }
-
-    /**
-     * Read a word token (until whitespace).
-     *
-     * @return Token
-     */
-    private function readWord(): Token
-    {
-        $value = '';
-
-        while (!$this->isEOF() && !ctype_space($this->peek())) {
-            $value .= $this->peek();
-            $this->advance();
-        }
-
-        return new Token('WORD', $value);
+        return substr($this->input, $start, $this->position - $start);
     }
 }
