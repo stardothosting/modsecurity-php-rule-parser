@@ -9,12 +9,10 @@ use Stardothosting\ModSecurity\Model\Action;
 
 class RuleParser
 {
-    private Tokenizer $tokenizer;
-
     public function parse(string $rawRule): Rule
     {
-        $this->tokenizer = new Tokenizer($rawRule);
-        $tokens = $this->tokenizer->tokenize();
+        $tokenizer = new Tokenizer($rawRule);
+        $tokens = $tokenizer->tokenize();
 
         $tokenIndex = 0;
 
@@ -22,9 +20,13 @@ class RuleParser
             throw new \Exception("Expected SecRule");
         }
 
-        $varToken = $tokens[$tokenIndex++];
-        $operatorToken = $tokens[$tokenIndex++] ?? null;
-        $operatorValToken = $tokens[$tokenIndex++] ?? null;
+        $varToken = $tokens[$tokenIndex++] ?? null;
+        $opToken = $tokens[$tokenIndex++] ?? null;
+        $opValToken = $tokens[$tokenIndex++] ?? null;
+
+        if (!$varToken || !$opToken) {
+            throw new \Exception("Failed to parse rule: $rawRule");
+        }
 
         $variables = [];
         foreach (explode('|', $varToken->value) as $v) {
@@ -32,10 +34,13 @@ class RuleParser
             $variables[] = new Variable(trim($name), $key ? trim($key) : null);
         }
 
-        $opType = $operatorToken ? $operatorToken->value : '@rx';
-        if (!str_starts_with($opType, '@')) $opType = '@' . $opType;
+        $opType = $opToken->value;
+        if (!str_starts_with($opType, '@')) {
+            $opType = '@' . $opType;
+        }
 
-        $operator = new Operator($opType, $operatorValToken ? $operatorValToken->value : '');
+        $opArg = $opValToken ? $opValToken->value : '';
+        $operator = new Operator($opType, $opArg);
 
         $actions = [];
         while ($tokenIndex < count($tokens)) {
@@ -45,8 +50,13 @@ class RuleParser
             foreach (explode(',', $token->value) as $a) {
                 $a = trim($a);
                 if (!$a) continue;
-                [$name, $param] = array_pad(explode(':', $a, 2), 2, null);
-                $actions[] = new Action(trim($name), $param ? trim($param) : null);
+
+                if (strpos($a, ':') !== false) {
+                    [$name, $param] = explode(':', $a, 2);
+                    $actions[] = new Action(trim($name), trim($param));
+                } else {
+                    $actions[] = new Action(trim($a), null);
+                }
             }
         }
 

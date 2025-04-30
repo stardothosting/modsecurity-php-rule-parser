@@ -19,6 +19,9 @@ class Tokenizer
 
     public function tokenize(): array
     {
+        $this->input = $this->joinMultilineRules($this->input);
+        $this->length = strlen($this->input);
+        $this->position = 0;
         $tokens = [];
 
         while ($this->position < $this->length) {
@@ -78,5 +81,11 @@ class Tokenizer
         }
 
         return substr($this->input, $start, $this->position - $start);
+    }
+
+    private function joinMultilineRules(string $input): string
+    {
+        // Join lines ending with backslash with the next line
+        return preg_replace("/\\\\\r?\n\s*/", " ", $input);
     }
 }
