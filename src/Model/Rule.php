@@ -5,7 +5,7 @@ namespace Stardothosting\ModSecurity\Model;
 /**
  * Represents a parsed ModSecurity rule, including variables, operator, actions, and chained rules.
  */
-class Rule
+class Rule implements \JsonSerializable
 {
     /**
      * @var Variable[] List of variables for this rule
@@ -63,6 +63,16 @@ class Rule
             'operator' => $this->operator?->toArray(),
             'actions' => array_map(fn($a) => $a->toArray(), $this->actions),
             'chained_rules' => array_map(fn($r) => $r->toArray(), $this->chainedRules),
+        ];
+    }
+
+    public function jsonSerialize()
+    {
+        return [
+            'variables' => $this->variables,
+            'operator' => $this->operator,
+            'actions' => $this->actions,
+            'chained_rules' => $this->chained_rules,
         ];
     }
 }
