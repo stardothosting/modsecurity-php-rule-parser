@@ -2,11 +2,11 @@
 
 namespace Stardothosting\ModSecurity\CLI;
 
-use Stardothosting\ModSecurity\Parser\RuleSetParser;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Stardothosting\ModSecurity\Parser\RuleSetParser;
 
 class ParseRulesCommand extends Command
 {
@@ -16,8 +16,8 @@ class ParseRulesCommand extends Command
     {
         $this
             ->setDescription('Parse ModSecurity rules from a file or folder')
-            ->addOption('file', null, InputOption::VALUE_REQUIRED, 'Path to .conf file')
-            ->addOption('folder', null, InputOption::VALUE_REQUIRED, 'Path to folder of .conf files');
+            ->addOption('file', null, InputOption::VALUE_REQUIRED, 'Path to a .conf file')
+            ->addOption('folder', null, InputOption::VALUE_REQUIRED, 'Path to a folder of .conf files');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
