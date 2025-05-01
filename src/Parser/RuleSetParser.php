@@ -25,6 +25,9 @@ class RuleSetParser
             $line = trim($line);
 
             if ($line === '' || str_starts_with($line, '#')) {
+                if ($expectingChain && $buffer !== '') {
+                    $buffer .= ' ';
+                }
                 continue;
             }
 
@@ -54,9 +57,8 @@ class RuleSetParser
                     if ($parentRule) {
                         $rules[] = $parentRule;
                         $parentRule = null;
-                    } else {
-                        $rules[] = $rule;
                     }
+                    $rules[] = $rule;
                     $expectingChain = false;
                 }
             }
@@ -64,7 +66,6 @@ class RuleSetParser
             $buffer = '';
         }
 
-        // Only the parent rule is returned for chained rule sets
         if ($parentRule) {
             $rules[] = $parentRule;
         }

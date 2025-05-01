@@ -3,80 +3,87 @@
 namespace Stardothosting\ModSecurity\Parser;
 
 use Stardothosting\ModSecurity\Model\Rule;
-use Stardothosting\ModSecurity\Model\Action;
-use Stardothosting\ModSecurity\Model\Variable;
 use Illuminate\Support\Facades\Log;
 
-class RuleParser
+class RuleSetParser
 {
-    public function parse(string $ruleString): Rule
+    private RuleParser $ruleParser;
+
+    public function __construct()
     {
-        // Remove leading SecRule and surrounding whitespace
-        $ruleString = trim(preg_replace('/^SecRule\s+/i', '', $ruleString));
-
-        // Match pattern: VARIABLES OPERATOR "ACTIONS"
-        if (!preg_match('/^(.*?)\s+"?(@[^\s"]+\s+[^\s"]+)"?\s+"([^"]*)"$/', $ruleString, $matches)) {
-            throw new \RuntimeException("Failed to parse rule structure: $ruleString");
-        }
-
-        [$full, $varString, $operatorString, $actionString] = $matches;
-
-        $variables = $this->parseVariables($varString);
-        $operator = $this->parseOperator($operatorString);
-        $actions = $this->parseActions($actionString);
-
-        return new Rule($variables, $operator, $actions);
+        $this->ruleParser = new RuleParser();
     }
 
-    private function parseVariables(string $input): array
+    public function parseRules(string $rawContent): array
     {
-        $parts = explode('|', $input);
-        $variables = [];
+        var_dump('test');
+        exit(0);
+        die();
+        $lines = preg_split('/\r\n|\r|\n/', $rawContent);
+        $rules = [];
+        $buffer = '';
+        $parentRule = null;
+        $expectingChain = false;
 
-        foreach ($parts as $part) {
-            $part = trim($part);
-            if (strpos($part, ':') !== false) {
-                [$name, $key] = explode(':', $part, 2);
-                $variables[] = new Variable(trim($name), trim($key));
-            } else {
-                $variables[] = new Variable(trim($part));
+        foreach ($lines as $lineNum => $line) {
+            $line = trim($line);
+
+            if ($line === '' || str_starts_with($line, '#')) {
+                continue;
+            }
+
+            if (substr($line, -1) === '\\') {
+                $buffer .= rtrim(substr($line, 0, -1)) . ' ';
+                continue;
+            }
+
+            $buffer .= $line;
+
+            $splitRules = preg_split('/(?=SecRule\s+)/i', $buffer, -1, PREG_SPLIT_NO_EMPTY);
+            foreach ($splitRules as $ruleString) {
+                $ruleString = trim($ruleString);
+                if ($ruleString === '') continue;
+
+                try {
+                    $rule = $this->ruleParser->parse($ruleString);
+                } catch (\Throwable $e) {
+                    Log::warning("Parse error at line $lineNum: " . $e->getMessage(), ['rule' => $ruleString]);
+                    continue;
+                }
+
+                if ($expectingChain && $parentRule) {
+                    $parentRule->addChainedRule($rule);
+                    $expectingChain = $this->isChainRule($rule);
+                } elseif ($this->isChainRule($rule)) {
+                    $parentRule = $rule;
+                    $expectingChain = true;
+                } else {
+                    if ($parentRule) {
+                        $rules[] = $parentRule;
+                        $parentRule = null;
+                    }
+                    $rules[] = $rule;
+                    $expectingChain = false;
+                }
+            }
+
+            $buffer = '';
+        }
+
+        if ($parentRule) {
+            $rules[] = $parentRule;
+        }
+
+        return $rules;
+    }
+
+    private function isChainRule(Rule $rule): bool
+    {
+        foreach ($rule->actions as $action) {
+            if (strtolower($action->name) === 'chain') {
+                return true;
             }
         }
-
-        return $variables;
-    }
-
-    private function parseOperator(string $input): array
-    {
-        $input = trim($input);
-        if (preg_match('/^@!?([^\s]+)\s+(.*)$/', $input, $matches)) {
-            return [
-                'name' => $matches[1],
-                'param' => trim($matches[2])
-            ];
-        }
-
-        return [
-            'name' => $input,
-            'param' => null
-        ];
-    }
-
-    private function parseActions(string $actionString): array
-    {
-        $actions = [];
-        $parts = preg_split('/,(?=(?:[^\'\"]|\'[^\']*\'|\"[^\"]*\")*$)/', $actionString);
-
-        foreach ($parts as $part) {
-            $part = trim($part);
-            if (strpos($part, ':') !== false) {
-                [$name, $param] = explode(':', $part, 2);
-                $actions[] = new Action(trim($name), trim($param, " '"));
-            } else {
-                $actions[] = new Action(trim($part));
-            }
-        }
-
-        return $actions;
+        return false;
     }
 }
