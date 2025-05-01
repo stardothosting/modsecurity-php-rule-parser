@@ -26,7 +26,7 @@ class RuleParser
         $opToken = $tokens[$tokenIndex++] ?? null;
         $opValToken = $tokens[$tokenIndex++] ?? null;
 
-        if (!$varToken || !$opToken) {
+        if (!$varToken || !$opToken || !$opValToken) {
             throw new \Exception("Failed to parse rule: $rawRule");
         }
 
@@ -41,18 +41,8 @@ class RuleParser
             $opType = '@' . $opType;
         }
 
-        $operator = null;
+        $operator = new Operator($opType, $opValToken->value);
         $actions = [];
-
-        if ($opValToken) {
-            $opArg = $opValToken->value;
-            // If the operator argument string starts with known action, treat as action string
-            if (preg_match('/^\s*(id|phase|deny|allow|pass|msg|log|status|tag|t|ctl|setvar|ver)/i', $opArg)) {
-                $actions = $this->parseActionsFromString($opArg);
-            } else {
-                $operator = new Operator($opType, $opArg);
-            }
-        }
 
         // Continue parsing any additional quoted action strings
         while ($tokenIndex < count($tokens)) {
