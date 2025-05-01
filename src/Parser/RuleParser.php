@@ -44,17 +44,18 @@ class RuleParser
         $operator = null;
         $actions = [];
 
-        if ($opValToken) {
-            $opArg = $opValToken->value;
-            // If the operator argument string starts with known action, treat as action string
-            if (preg_match('/^\s*(id|phase|deny|allow|pass|msg|log|status|tag|t|ctl|setvar|ver)/i', $opArg)) {
-                $actions = $this->parseActionsFromString($opArg);
+        if ($opValToken && $opValToken->type === 'QUOTED_STRING') {
+            $value = $opValToken->value;
+
+            // Heuristic: does it look like a valid operator argument or an action string?
+            if ($this->looksLikeActionString($value)) {
+                $actions = $this->parseActionsFromString($value);
             } else {
-                $operator = new Operator($opType, $opArg);
+                $operator = new Operator($opType, $value);
             }
         }
 
-        // Continue parsing any additional quoted action strings
+        // Additional quoted tokens might contain more actions
         while ($tokenIndex < count($tokens)) {
             $token = $tokens[$tokenIndex++];
             if ($token->type !== 'QUOTED_STRING') continue;
@@ -63,6 +64,12 @@ class RuleParser
         }
 
         return new Rule($variables, $operator, $actions);
+    }
+
+    private function looksLikeActionString(string $value): bool
+    {
+        // If the string starts with known action names, it's probably action string
+        return preg_match('/\b(id|phase|deny|allow|pass|msg|log|status|tag|t|ctl|setvar|ver)\b/i', $value);
     }
 
     private function parseActionsFromString(string $raw): array
