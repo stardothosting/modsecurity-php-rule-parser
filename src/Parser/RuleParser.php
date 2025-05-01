@@ -11,8 +11,6 @@ class RuleParser
 {
     public function parse(string $ruleString): Rule
     {
-        var_dump('test');
-        exit(0);die();
         // Remove leading SecRule and surrounding whitespace
         $ruleString = trim(preg_replace('/^SecRule\s+/i', '', $ruleString));
 
