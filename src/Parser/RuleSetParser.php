@@ -3,7 +3,6 @@
 namespace Stardothosting\ModSecurity\Parser;
 
 use Stardothosting\ModSecurity\Model\Rule;
-use Illuminate\Support\Facades\Log;
 
 class RuleSetParser
 {
@@ -14,7 +13,7 @@ class RuleSetParser
         $this->ruleParser = new RuleParser();
     }
 
-    public function parseRules(string $rawContent, string $fileName = 'unknown'): array
+    public function parseRules(string $rawContent): array
     {
         $lines = preg_split('/\r\n|\r|\n/', $rawContent);
         $rules = [];
@@ -22,7 +21,7 @@ class RuleSetParser
         $parentRule = null;
         $expectingChain = false;
 
-        foreach ($lines as $lineNum => $line) {
+        foreach ($lines as $line) {
             $line = trim($line);
 
             if ($line === '' || str_starts_with($line, '#')) {
@@ -44,9 +43,6 @@ class RuleSetParser
                 try {
                     $rule = $this->ruleParser->parse(trim($ruleString));
                 } catch (\Throwable $e) {
-                    Log::warning("Parse error in {$fileName} at line {$lineNum}: {$e->getMessage()}", [
-                        'rule' => $ruleString
-                    ]);
                     $buffer = '';
                     continue;
                 }
