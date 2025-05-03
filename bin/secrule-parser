@@ -1,0 +1,58 @@
+#!/usr/bin/env php
+<?php
+// bin/secrule-parser
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use StardotHosting\SecRuleParser\Parser;
+
+function usage(): void {
+    $me = basename(__FILE__);
+    echo "Usage:\n";
+    echo "  $me <input.conf|dir> [<output_dir>] [--stdout]\n\n";
+    echo "Options:\n";
+    echo "  --stdout    Print JSON to stdout instead of files.\n";
+    exit(1);
+}
+
+$args = array_filter($argv, fn($a)=>!in_array($a, ["-q","--quiet"]));
+if (count($args) < 2) {
+    usage();
+}
+
+$input   = realpath($args[1]) ?: $args[1];
+$output  = $args[2] ?? null;
+$toStd   = in_array('--stdout', $argv, true);
+
+$parser = new Parser();
+
+$files = [];
+if (is_dir($input)) {
+    $files = glob(rtrim($input, '/').'/*.conf');
+} elseif (is_file($input)) {
+    $files = [$input];
+} else {
+    fwrite(STDERR, "Error: input not found: $input\n");
+    exit(2);
+}
+
+foreach ($files as $file) {
+    try {
+        $rules = $parser->parseFile($file);
+        $json  = json_encode($rules, JSON_PRETTY_PRINT);
+        if ($toStd || !$output) {
+            echo $json . "\n";
+        } else {
+            if (!is_dir($output) && !mkdir($output, 0755, true)) {
+                throw new \RuntimeException("Cannot create output dir: $output");
+            }
+            $basename = pathinfo($file, PATHINFO_FILENAME) . '.json';
+            file_put_contents(rtrim($output, '/')."/$basename", $json);
+            echo "Wrote: $basename\n";
+        }
+    } catch (\Exception $e) {
+        fwrite(STDERR, "Parse error in $file: ".$e->getMessage()."\n");
+        exit(3);
+    }
+}
+

@@ -1,155 +1,146 @@
-# ModSecurity PHP Rule Parser
+# StardotHosting SecRule Parser
 
-A fully-featured PHP parser for [ModSecurity](https://modsecurity.org/) rules, including full compatibility with [OWASP CoreRuleSet (CRS)](https://coreruleset.org/).
+[![Packagist Version](https://img.shields.io/packagist/v/stardothosting/secrule-parser.svg)](https://packagist.org/packages/stardothosting/secrule-parser)
+[![License](https://img.shields.io/packagist/l/stardothosting/secrule-parser.svg)](LICENSE)
 
-This project provides a clean way to tokenize, parse, inspect, and manipulate ModSecurity rule files (`.conf`) in structured PHP objects or JSON — usable from PHP code or the command line.
-
----
-
-## ✨ Features
-
-- ✅ Parses `SecRule` directives from `.conf` files
-- ✅ Handles:
-  - Chained rules (`chain`)
-  - Multiline rules (`\` continuation)
-  - Quoted actions and operators
-  - Negated operators (e.g. `!@rx`)
-  - Escaped characters inside quoted strings
-- ✅ Converts rules to structured PHP objects or JSON
-- ✅ CLI for parsing files or folders
-- ✅ Tested against real OWASP CoreRuleSet rules
-- ✅ Composer + PSR-4 ready
+A 1:1 PHP port of msc_pyparser (ModSecurity SecRule parser) with JSON output.
 
 ---
 
-## 📦 Installation
+## Table of Contents
+
+- [Features](#features)  
+- [Requirements](#requirements)  
+- [Installation](#installation)  
+- [Quick Start](#quick-start)  
+  - [As a Library](#as-a-library)  
+  - [From the CLI](#from-the-cli)  
+- [Usage](#usage)  
+  - [Parsing a Single File](#parsing-a-single-file)  
+  - [Parsing a Directory](#parsing-a-directory)  
+- [API Reference](#api-reference)  
+- [Contributing](#contributing)  
+- [License](#license)  
+
+---
+
+## Features
+
+- **Full fidelity** to the original Python implementation: all variables, operators, actions, quoting rules, chaining logic, and error reporting are preserved exactly.  
+- **JSON output** instead of YAML—no extra dependencies.  
+- **PSR-4** compliant, installable via Composer.  
+- **CLI tool** for rapid testing and integration in scripts or CI.  
+
+---
+
+## Requirements
+
+- PHP 7.4 or higher
+- [psr/log](https://packagist.org/packages/psr/log) (optional, for logging)
+
+---
+
+## Installation
 
 ```bash
-composer require stardothosting/modsecurity-php-rule-parser
+composer require stardothosting/secrule-parser
 ```
 
-If working from source:
+---
+
+## Quick Start
+
+### As a Library
+
+```php
+<?php
+
+require 'vendor/autoload.php';
+
+use StardotHosting\SecRuleParser\Parser;
+
+// Parse a single rules file into a PHP array
+$parser = new Parser();
+$rules  = $parser->parseFile(__DIR__ . '/REQUEST-920-PROTOCOL-ENFORCEMENT.conf');
+
+// Output pretty JSON
+echo json_encode($rules, JSON_PRETTY_PRINT), "
+";
+```
+
+### From the CLI
 
 ```bash
-git clone https://github.com/stardothosting/modsecurity-php-rule-parser.git
-cd modsecurity-php-rule-parser
-composer install
+# Parse one file and print JSON to stdout
+vendor/bin/secrule-parser /path/to/my.conf --stdout
+
+# Parse all .conf files in a directory, writing .json files to ./out/
+vendor/bin/secrule-parser /path/to/rules/ ./out/
+
+# Show help
+vendor/bin/secrule-parser -h
 ```
 
-## 🧰 CLI Usage
-The CLI tool allows you to parse ModSecurity .conf rules directly from the command line, either from a single file or an entire folder of rules.
+---
 
-### 🔄 Parse a single .conf file
-```bash
-php bin/modsec-parser parse --file=/path/to/file.conf
+## Usage
+
+### Parsing a Single File
+
+```php
+use StardotHosting\SecRuleParser\Parser;
+
+$parser = new Parser();
+$rules = $parser->parseFile('/path/to/rules.conf');
+print_r($rules);
 ```
 
-Outputs the parsed rule(s) in JSON format to STDOUT.
+### Parsing a Directory
 
-### 📂 Parse an entire folder of .conf files
-```bash
-php bin/modsec-parser parse --folder=/path/to/conf/rules/
-```
-
-Parses all .conf files in the folder (non-recursive for now).
-
-Example output format:
-```json
-{
-  "/path/to/file1.conf": [ { rule1... }, { rule2... } ],
-  "/path/to/file2.conf": [ { rule1... } ]
+```php
+$allRules = [];
+foreach (glob('/etc/modsecurity/rules/*.conf') as $file) {
+    $allRules[$file] = (new \StardotHosting\SecRuleParser\Parser())
+        ->parseFile($file);
 }
 ```
 
-## 📝 Notes
-Ensure you run composer install first.
+---
 
-Make the CLI executable (optional):
+## API Reference
 
-```bash
-chmod +x bin/modsec-parser
-```
+#### `Parser::parseFile(string $path): array`
 
-For pretty output:
+- Reads and parses the given `.conf` file.  
+- Throws `\RuntimeException` on read error or parse exception.
 
-```bash
-php bin/modsec-parser parse --folder=rules/ | jq
-```
+#### `Parser::parse(string $input, string $filename = '<string>'): array`
 
-## 🧪 Testing
-We include full PHPUnit tests, including coverage for real-world CoreRuleSet .conf files.
+- Parses a raw ruleset string.  
+- Returns an array of rule definitions (each as an associative array matching the Python schema).
 
-### Run all tests:
-```bash
-vendor/bin/phpunit
-```
+---
 
-### Run only the CoreRuleSet test:
-```bash
-vendor/bin/phpunit --filter CoreRuleSetParsingTest
-```
+## Contributing
 
-Make sure to place the CRS rules/ folder inside tests/coreruleset-rules/
+1. Fork the repository  
+2. Create your feature branch (`git checkout -b feature/YourFeature`)  
+3. Commit your changes (`git commit -am 'Add some feature'`)  
+4. Push to the branch (`git push origin feature/YourFeature`)  
+5. Open a Pull Request  
 
-## 📚 Output Example
-Given this rule:
+Please follow PSR-12 coding standards and provide unit tests for any new parsing rules.
 
-```apache
-SecRule REQUEST_URI "@rx admin" "id:1001,phase:2,deny,chain" \
-SecRule ARGS:username "@streq admin"
-```
+---
 
-You’ll get:
+## License
 
-```json
-{
-  "variables": ["REQUEST_URI"],
-  "operator": {
-    "type": "@rx",
-    "value": "admin"
-  },
-  "actions": [
-    {"name": "id", "param": "1001"},
-    {"name": "phase", "param": "2"},
-    {"name": "deny", "param": null},
-    {"name": "chain", "param": null}
-  ],
-  "chained_rules": [
-    {
-      "variables": ["ARGS:username"],
-      "operator": {
-        "type": "@streq",
-        "value": "admin"
-      },
-      "actions": []
-    }
-  ]
-}
-```
+This project is licensed under the **GPL-3.0-or-later**. See the [LICENSE](LICENSE) file for details.  
+Ported from the original [`msc_pyparser`](https://github.com/digitalwave/msc_pyparser) by Ervin Hegedüs (GPL-3.0).
 
-## 🧠 Why This Exists
-There was no reliable PHP-native parser for real-world ModSecurity rules that could:
+## Breaking Changes in v3.0.0 (2024-06-06)
 
-- Parse chained, multiline, and negated rules
-- Handle escaped characters
-- Return useful structured objects
-
-This solves that — fully compatible with CRS, usable in PHP, CLI, or testing environments.
-
-## 🛠 Roadmap
-- Recursive directory parsing in CLI
-- Support SecMarker, SecAction
-- YAML/JSON output mode
-- Integration-ready output for Laravel/Filament
-
-## 🧑‍💻 Contributing
-1. Fork this repo
-
-2. Create a feature branch (feature/my-feature)
-
-3. Add tests
-
-4. Submit a PR
-
-## 📝 License
-MIT — free for commercial or open source use.
+- Namespace changed to `StardotHosting\SecRuleParser\`
+- Composer package renamed to `stardothosting/secrule-parser`
+- Minimum PHP version is now 7.4
+- Old namespaces and package names are no longer supported
