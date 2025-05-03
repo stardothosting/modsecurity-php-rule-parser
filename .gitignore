@@ -1,0 +1,35 @@
+# Composer dependencies
+/vendor/
+/composer.lock
+
+# Build artifacts
+/build/
+/dist/
+
+# Editor directories and files
+/.idea/
+/.vscode/
+/*.iml
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Logs and runtime files
+*.log
+/tmp/
+/var/
+
+# PHPUnit and coverage
+phpunit.xml
+phpunit.xml.dist
+/.phpunit.result.cache
+coverage/
+*.cover
+
+# Environment files
+.env
+
+# output 
+/out/
+json_out.json
