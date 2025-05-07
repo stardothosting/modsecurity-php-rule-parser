@@ -7,6 +7,8 @@ class Parser
 {
     private $logger = null;
     private $logToConsole = false;
+    /** @var bool */
+    private $debug = false;
 
     public function setLogger(LoggerInterface $logger)
     {
@@ -16,6 +18,14 @@ class Parser
     public function setLogToConsole(bool $flag)
     {
         $this->logToConsole = $flag;
+    }
+
+    /**
+     * Enable or disable debug output.
+     */
+    public function setDebug(bool $debug)
+    {
+        $this->debug = $debug;
     }
 
     private function log($level, $message)
@@ -84,33 +94,42 @@ class Parser
             }
         }
 
-        // echo "LOGICAL LINE $i: $rawLine\n";
-
         $result = [];
         $buffer = [];
-        $start_lineno = 0;
+        $bufferStartLine = 0;
         foreach ($logicalLines as $lineno => $line) {
-            // Start of a rule
-            if (preg_match('/^\s*SecRule\b/i', $line) || preg_match('/^\s*SecAction\b/i', $line)) {
-                if (!empty($buffer)) {
-                    $this->parseSecRuleBuffer($buffer, $start_lineno, $result);
+            if (preg_match('/^\s*SecRule\b/', $line) || preg_match('/^\s*SecAction\b/', $line) || preg_match('/^\s*SecMarker\b/', $line)) {
+                if ($buffer) {
+                    $this->parseSecRuleBuffer($buffer, $bufferStartLine, $result);
                     $buffer = [];
                 }
-                $start_lineno = $lineno;
+                $bufferStartLine = $lineno;
+                $buffer[] = $line;
+            } elseif (preg_match('/^\s+/', $line) && $buffer) {
+                // This is a chained child (indented)
+                $buffer[] = $line;
+            } else {
+                // Not a rule or child, flush buffer if needed
+                if ($buffer) {
+                    $this->parseSecRuleBuffer($buffer, $bufferStartLine, $result);
+                    $buffer = [];
+                }
             }
-            // Add line to buffer
-            $buffer[] = $line;
+        }
+        if ($buffer) {
+            $this->parseSecRuleBuffer($buffer, $bufferStartLine, $result);
+        }
 
-            // If the line ends with a double quote (and not a backslash-escaped one), it's the end of the rule
-            if (preg_match('/"\s*$/', rtrim($line))) {
-                $this->parseSecRuleBuffer($buffer, $start_lineno, $result);
-                $buffer = [];
+        $flat = [];
+        foreach ($result as $group) {
+            foreach ($group as $rule) {
+                if (isset($rule['id'])) {
+                    $flat[] = $rule;
+                }
             }
         }
-        // Flush any remaining buffer
-        if (!empty($buffer)) {
-            $this->parseSecRuleBuffer($buffer, $start_lineno, $result);
-        }
+        // Now $flat contains all rules with IDs, including chain children
+
         return $result;
     }
 
@@ -120,8 +139,6 @@ class Parser
      */
     private function parseSecRuleBuffer(array $buffer, int $start_lineno, array &$result)
     {
-        // All file logging removed
-
         // Join all buffer lines to search for id robustly
         $joined = implode(' ', $buffer);
 
@@ -133,15 +150,20 @@ class Parser
             return;
         }
 
+        $group = [];
         foreach ($buffer as $idx => $line) {
             $lineno = $start_lineno + $idx;
-
             $parsed = $this->parseSecRuleLine($line, $lineno);
             if ($parsed) {
-                $parsed['id'] = $id;
-                $result[] = $parsed;
-                $this->log('debug', "PARSED $lineno: $line [id:$id]");
+                if ($idx === 0) {
+                    $parsed['id'] = $id;
+                }
+                $group[] = $parsed;
+                $this->log('debug', "PARSED $lineno: $line [id:" . ($parsed['id'] ?? '-') . "]");
             }
+        }
+        if ($group) {
+            $result[] = $group;
         }
     }
 
@@ -161,6 +183,14 @@ class Parser
         if (preg_match('/^\s*SecAction\b/', $line)) {
             return [
                 'type' => 'SecAction',
+                'lineno' => $lineno,
+                'raw' => $line,
+            ];
+        }
+        // Handle chained child: line does not start with SecRule/SecAction, but is not empty/comment
+        if (preg_match('/^\s*[@"]/', $line)) {
+            return [
+                'type' => 'SecRuleChainChild',
                 'lineno' => $lineno,
                 'raw' => $line,
             ];
@@ -199,5 +229,64 @@ class Parser
         }
 
         return $out;
+    }
+
+    /**
+     * Group parent rules with their chained children.
+     *
+     * @param array $rules
+     * @return array
+     */
+    public function groupChainedRules(array $rules): array
+    {
+        $groups = [];
+        $i = 0;
+        $count = count($rules);
+
+        while ($i < $count) {
+            $rule = $rules[$i];
+
+            // If this rule is a chain parent
+            if (isset($rule['raw']) && strpos($rule['raw'], 'chain') !== false) {
+                $group = [];
+                $group[] = $rule;
+                $i++;
+
+                // Add all subsequent rules that are children of this chain
+                while ($i < $count) {
+                    $child = $rules[$i];
+
+                    // A child rule is typically indented (starts with whitespace)
+                    // or does not have 'chain' in its raw (but is part of the chain)
+                    if (
+                        isset($child['raw']) &&
+                        (preg_match('/^\s+/', $child['raw']) || !preg_match('/SecRule|SecAction/', $child['raw']))
+                    ) {
+                        $group[] = $child;
+                        $i++;
+                    } else {
+                        // Next rule is not a child, break
+                        break;
+                    }
+                }
+                $groups[] = $group;
+            } else {
+                // Not a chain parent, just add as its own group
+                $groups[] = [$rule];
+                $i++;
+            }
+        }
+
+        return $groups;
+    }
+
+    public function parseString(string $rules)
+    {
+        // If your parser already has a method that parses file contents,
+        // just call it here. For example, if you have parse($string):
+        return $this->parse($rules);
+
+        // If not, you may need to refactor your code so that both
+        // parseFile() and parseString() use the same underlying logic.
     }
 }

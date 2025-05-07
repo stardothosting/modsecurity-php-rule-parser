@@ -23,9 +23,10 @@ if (count($args) < 2) {
 $input   = realpath($args[1]) ?: $args[1];
 $output  = $args[2] ?? null;
 $toStd   = in_array('--stdout', $argv, true);
+$debug   = in_array('--debug', $argv, true);
 
 $parser = new Parser();
-
+$parser->setDebug($debug);
 $files = [];
 if (is_dir($input)) {
     $files = glob(rtrim($input, '/').'/*.conf');
@@ -39,7 +40,8 @@ if (is_dir($input)) {
 foreach ($files as $file) {
     try {
         $rules = $parser->parseFile($file);
-        $json  = json_encode($rules, JSON_PRETTY_PRINT);
+        $groupedRules = $parser->groupChainedRules($rules);
+        $json  = json_encode($groupedRules, JSON_PRETTY_PRINT);
         if ($toStd || !$output) {
             echo $json . "\n";
         } else {

@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.0.0] - 2024-06-06
+
+### Changed
+- **Namespace updated:** All classes now use `StardotHosting\SecRuleParser\` (was `Stardothosting\ModSecurity\`).
+- **Composer package renamed:** Now published as `stardothosting/secrule-parser` (was `stardothosting/modsecurity-php-rule-parser`).
+- **Dropped backward compatibility** with previous namespaces and package names.
+- **Minimum PHP version:** Now requires PHP 7.4 or higher.
+- **PSR-4 autoloading:** Updated to match new namespace and directory structure.
+- **Logging:** Now uses `psr/log` for optional logging.
+- **CLI binary:** Now available as `bin/secrule-parser`.
+
+### Added
+- Improved documentation and usage examples in README.
+- Explicit support for JSON output and 1:1 compatibility with `msc_pyparser`.
+
+### Removed
+- Support for legacy namespaces and package names.
+
+---
+
 ## [2.0.2] - 2025-04-29
 
 ### Added
