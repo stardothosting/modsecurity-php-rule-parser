@@ -145,6 +145,9 @@ class Parser
         // More robust id search: allow for quotes, whitespace, comma, or end of string after id
         if (preg_match('/id\s*:\s*["\']?([0-9]+)["\']?(?=\s*,|\s|$)/i', $joined, $m)) {
             $id = $m[1];
+            //if (in_array($id, ['901001', '901100'], true)) {
+            //    echo "DEBUG: Found rule with ID $id at line $start_lineno: $joined\n";
+            //}
         } else {
             $this->log('debug', "SKIPPED $start_lineno: {$buffer[0]} [reason: no id]");
             return;
