@@ -68,6 +68,12 @@ echo json_encode($rules, JSON_PRETTY_PRINT), "
 ";
 ```
 
+> **Note:**  
+> The parser now returns a **nested array structure**:  
+> - Each top-level element is a group of rules (e.g., a main rule and its chained children).  
+> - Each group is an array of one or more rules, preserving the original chaining and grouping from the ModSecurity config.  
+> - To get a flat list of all rules (e.g., for searching by ID), you may need to recursively flatten the array.
+
 ### From the CLI
 
 ```bash
@@ -92,7 +98,7 @@ use StardotHosting\SecRuleParser\Parser;
 
 $parser = new Parser();
 $rules = $parser->parseFile('/path/to/rules.conf');
-print_r($rules);
+print_r($rules); // $rules is a nested array of rule groups
 ```
 
 ### Parsing a Directory
@@ -101,7 +107,7 @@ print_r($rules);
 $allRules = [];
 foreach (glob('/etc/modsecurity/rules/*.conf') as $file) {
     $allRules[$file] = (new \StardotHosting\SecRuleParser\Parser())
-        ->parseFile($file);
+        ->parseFile($file); // Each file returns a nested array of rule groups
 }
 ```
 
@@ -112,12 +118,13 @@ foreach (glob('/etc/modsecurity/rules/*.conf') as $file) {
 #### `Parser::parseFile(string $path): array`
 
 - Reads and parses the given `.conf` file.  
+- **Returns a nested array of rule groups**. Each group is an array of one or more rules (for chained rules, the group contains the main rule and its chained children).  
 - Throws `\RuntimeException` on read error or parse exception.
 
 #### `Parser::parse(string $input, string $filename = '<string>'): array`
 
 - Parses a raw ruleset string.  
-- Returns an array of rule definitions (each as an associative array matching the Python schema).
+- **Returns a nested array of rule groups** (see above).
 
 ---
 
@@ -137,6 +144,14 @@ Please follow PSR-12 coding standards and provide unit tests for any new parsing
 
 This project is licensed under the **GPL-3.0-or-later**. See the [LICENSE](LICENSE) file for details.  
 Ported from the original [`msc_pyparser`](https://github.com/digitalwave/msc_pyparser) by Ervin Hegedüs (GPL-3.0).
+
+## Breaking Changes in v3.0.1 (2024-06-07)
+
+- **Parser output is now a nested array of rule groups**.  
+  - Each group is an array of one or more rules, preserving ModSecurity's chaining/grouping.
+  - If you need a flat list of rules, you must flatten the array yourself.
+- Test suite updated to recursively flatten the output for ID checks.
+- (Also see v3.0.0 changes below.)
 
 ## Breaking Changes in v3.0.0 (2024-06-06)
 

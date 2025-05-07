@@ -1,5 +1,22 @@
 # Changelog
 
+## [4.0.0] - 2024-06-07
+
+### Changed
+- **Parser output structure:** The parser now returns a **nested array of rule groups**. Each group is an array of one or more rules, preserving ModSecurity's chaining and grouping. This is a breaking change from the previous flat array output.
+- **Chained rule grouping:** Chained rules are now grouped together in the output, with each group representing a main rule and its chained children.
+- **Test suite updated:** Tests now recursively flatten the nested output structure to check for rule IDs and other assertions.
+- **Documentation updated:** README and usage examples updated to reflect the new output structure and how to work with grouped rules.
+
+### Added
+- **Debugging utilities:** Improved debug output for rule IDs and line numbers to assist with troubleshooting and validation.
+- **Explicit notes in documentation:** Added clear instructions and examples for flattening the nested rule array if a flat list is needed.
+
+### Removed
+- **Flat rule output:** The parser no longer returns a flat array of rules by default.
+
+---
+
 ## [3.0.0] - 2024-06-06
 
 ### Changed
